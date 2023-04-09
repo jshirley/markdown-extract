@@ -3,7 +3,7 @@
 # See: https://alexbrand.dev/post/how-to-package-rust-applications-into-minimal-docker-containers/
 
 # 1: Build the exe
-FROM rust:1.57 as builder
+FROM rust:1.68 as builder
 WORKDIR /usr/src
 
 # 1a: Prepare for static linking

@@ -1,10 +1,12 @@
 mod error;
 
 use error::NoMatchesError;
-use markdown_extract::{extract_from_path, MarkdownSection};
+use markdown_extract::{extract_from_reader, MarkdownSection};
 use regex::RegexBuilder;
 use std::error::Error;
 use std::path::PathBuf;
+use std::io::{self};
+use std::fs;
 use structopt::StructOpt;
 
 /// Extract sections of a markdown file according to a regular expression.
@@ -28,7 +30,11 @@ pub struct Opts {
 
     /// Path to markdown file
     #[structopt(parse(from_os_str))]
-    path: PathBuf,
+    path: Option<PathBuf>,
+
+    /// Read from stdin instead of a file
+    #[structopt(long)]
+    stdin: bool,
 }
 
 fn print_section(section: &MarkdownSection, no_print_matched_heading: bool) {
@@ -50,7 +56,12 @@ fn run() -> Result<(), Box<dyn Error>> {
         .build()
         .unwrap();
 
-    let matches = extract_from_path(&opts.path, &regex)?;
+    let matches = match (opts.path, opts.stdin) {
+        (Some(i), false) => extract_from_reader(fs::File::open(i)?, &regex)?,
+        (None, true) => extract_from_reader(io::stdin(), &regex)?,
+        (Some(_), true) => panic!("Must supply a path or --stdin, but not both"),
+        (None, false) => panic!("Must supply a path or --stdin")
+    };
 
     if matches.len() == 0 {
         return Err(Box::new(NoMatchesError::new()));

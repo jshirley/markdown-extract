@@ -4,29 +4,22 @@ mod state;
 use heading::try_parse_heading;
 use regex::Regex;
 use state::State;
-use std::fs::File;
+use std::io::{Read, BufReader, Error};
 use std::io::prelude::*;
-use std::io::BufReader;
-use std::path::PathBuf;
 
 pub type MarkdownSection = Vec<String>;
 
-pub fn extract_from_path(
-    path: &PathBuf,
-    regex: &Regex,
-) -> Result<Vec<MarkdownSection>, std::io::Error> {
-    let file = File::open(&path)?;
-    let mut reader = BufReader::new(file);
-    return Ok(extract_from_reader(&mut reader, &regex));
-}
-
+/*
 pub fn extract_from_reader<R: Read>(
     reader: &mut BufReader<R>,
     regex: &Regex,
 ) -> Vec<MarkdownSection> {
+*/
+pub fn extract_from_reader<R: Read>(reader: R, regex: &Regex) -> Result<Vec<MarkdownSection>, Error> {
     let mut state = State::default();
+    let buffered = BufReader::new(reader);
 
-    for line in reader.lines() {
+    for line in buffered.lines() {
         let line = line.unwrap();
 
         if line.starts_with("```") {
@@ -54,5 +47,5 @@ pub fn extract_from_reader<R: Read>(
 
     state.push_current();
 
-    return state.matches;
+    return Ok(state.matches);
 }
